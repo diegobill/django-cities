@@ -15,8 +15,8 @@ class Place(models.Model):
 
     objects = models.GeoManager()
 
-    class Meta:
-        abstract = True
+    #class Meta:
+    #    abstract = True
 
     @property
     def hierarchy(self):
@@ -30,6 +30,9 @@ class Place(models.Model):
 
     def __unicode__(self):
         return force_unicode(self.name)
+
+class Continent(Place):
+    code = models.CharField(max_length=2)
 
 class Country(Place):
     code = models.CharField(max_length=2, db_index=True)
