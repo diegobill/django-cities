@@ -31,9 +31,6 @@ class Place(models.Model):
     def __unicode__(self):
         return force_unicode(self.name)
 
-class Continent(Place):
-    code = models.CharField(max_length=2)
-
 class Country(Place):
     code = models.CharField(max_length=2, db_index=True)
     code3 = models.CharField(max_length=3, db_index=True)
