@@ -8,6 +8,12 @@ __all__ = [
         'City', 'District', 'PostalCode', 'AlternativeName', 
 ]
 
+def get_or_none(classmodel, **kwargs):
+    try:
+        return classmodel.objects.get(**kwargs)
+    except classmodel.DoesNotExist:
+        return None
+
 class Place(models.Model):
     name = models.CharField(max_length=200, db_index=True, verbose_name="ascii name")
     slug = models.CharField(max_length=200)
@@ -19,17 +25,38 @@ class Place(models.Model):
     #    abstract = True
 
     @property
+    def children(self):
+        for place in [City, District, Subregion, Region, Country]:
+            p = get_or_none(place,pk=self.id) 
+            if p:
+                return p
+
+        return self
+
+    @property
     def hierarchy(self):
         """Get hierarchy, root first"""
-        list = self.parent.hierarchy if self.parent else []
-        list.append(self)
+        if isinstance(self,Place):
+            children = self.children
+        else:
+            children = self
+        list = children.parent.hierarchy if children.parent else []
+        list.append(children)
         return list
 
     def get_absolute_url(self):
-        return "/".join([place.slug for place in self.hierarchy])
+        if isinstance(self,Place):
+            children = self.children
+        else:
+            children = self
+        h = children.hierarchy
+        h.reverse()
+        return "/".join([place.slug for place in h])
 
     def __unicode__(self):
-        return force_unicode(self.name)
+        h = self.children.hierarchy
+        h.reverse()
+        return ", ".join([place.name for place in h])
 
 class Country(Place):
     code = models.CharField(max_length=2, db_index=True)
