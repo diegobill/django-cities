@@ -30,6 +30,8 @@ from ...conf import *
 from ...models import *
 from ...util import geo_distance
 
+from django.db import transaction, reset_queries
+
 class Command(BaseCommand):
     app_dir = os.path.normpath(os.path.dirname(os.path.realpath(__file__)) + '/../..')
     data_dir = os.path.join(app_dir, 'data')
@@ -184,6 +186,9 @@ class Command(BaseCommand):
             
             if not self.call_hook('country_post', country, item): continue 
             country.save()
+            # free some memory
+            # https://docs.djangoproject.com/en/dev/faq/models/
+            reset_queries()
 
         for country, neighbour_codes in neighbours.items():
             neighbours = [x for x in [countries.get(x) for x in neighbour_codes if x] if x]
@@ -225,6 +230,9 @@ class Command(BaseCommand):
             if not self.call_hook('region_post', region, item): continue
             region.save()
             self.logger.debug("Added region: {0}, {1}".format(item['code'], region))
+            # free some memory
+            # https://docs.djangoproject.com/en/dev/faq/models/
+            reset_queries()
         
     def build_region_index(self):
         if hasattr(self, 'region_index'): return
@@ -265,6 +273,9 @@ class Command(BaseCommand):
             if not self.call_hook('subregion_post', subregion, item): continue
             subregion.save()
             self.logger.debug("Added subregion: {0}, {1}".format(item['code'], subregion))
+            # free some memory
+            # https://docs.djangoproject.com/en/dev/faq/models/
+            reset_queries()
             
         del self.region_index
         
@@ -327,6 +338,9 @@ class Command(BaseCommand):
             if not self.call_hook('city_post', city, item): continue
             city.save()
             self.logger.debug("Added city: {0}".format(city))
+            # free some memory
+            # https://docs.djangoproject.com/en/dev/faq/models/
+            reset_queries()
         
     def build_hierarchy(self):
         if hasattr(self, 'hierarchy'): return
@@ -403,6 +417,9 @@ class Command(BaseCommand):
             if not self.call_hook('district_post', district, item): continue
             district.save()
             self.logger.debug("Added district: {0}".format(district))
+            # free some memory
+            # https://docs.djangoproject.com/en/dev/faq/models/
+            reset_queries()
         
     def import_alt_name(self):
         uptodate = self.download('alt_name')
@@ -446,6 +463,9 @@ class Command(BaseCommand):
             geo_info['object'].alt_names.add(alt)
 
             self.logger.debug("Added alt name: {0}, {1}".format(locale, alt))
+            # free some memory
+            # https://docs.djangoproject.com/en/dev/faq/models/
+            reset_queries()
 
     def import_postal_code(self):
         uptodate = self.download('postal_code')
@@ -489,6 +509,9 @@ class Command(BaseCommand):
             self.logger.debug("Adding postal code: {0}, {1}".format(pc.country, pc))
             try:
                 pc.save()
+                # free some memory
+                # https://docs.djangoproject.com/en/dev/faq/models/
+                reset_queries()
             except Exception, e:
                 print e
 
