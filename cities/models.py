@@ -5,7 +5,7 @@ from conf import settings
 
 __all__ = [
         'Point', 'Country', 'Region', 'Subregion',
-        'City', 'District', 'PostalCode', 'AlternativeName', 
+        'City', 'Continente', 'District', 'PostalCode', 'AlternativeName', 'Place' 
 ]
 
 def get_or_none(classmodel, **kwargs):
@@ -25,8 +25,8 @@ class Place(models.Model):
     #    abstract = True
 
     @property
-    def children(self):
-        for place in [City, District, Subregion, Region, Country]:
+    def subclass(self):
+        for place in [City, District, Subregion, Region, Country, Continente]:
             p = get_or_none(place,pk=self.id) 
             if p:
                 return p
@@ -37,26 +37,40 @@ class Place(models.Model):
     def hierarchy(self):
         """Get hierarchy, root first"""
         if isinstance(self,Place):
-            children = self.children
+            subclass = self.subclass
         else:
-            children = self
-        list = children.parent.hierarchy if children.parent else []
-        list.append(children)
+            subclass = self
+        list = subclass.parent.hierarchy if subclass.parent else []
+        list.append(subclass)
         return list
 
     def get_absolute_url(self):
-        if isinstance(self,Place):
-            children = self.children
-        else:
-            children = self
-        h = children.hierarchy
+        h = self.hierarchy
         h.reverse()
         return "/".join([place.slug for place in h])
 
     def __unicode__(self):
-        h = self.children.hierarchy
+        h = self.hierarchy
         h.reverse()
         return ", ".join([place.name for place in h])
+
+'''
+coloquei continente em portugues, pois quando estava colocando apenas
+continent estava dando conflito com o atributo continent de Country
+'''
+class Continente(Place):
+    code = models.CharField(max_length=2)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = "continentes"
+
+    @property
+    def parent(self):
+        return None
+
+    def __unicode__(self):
+        return force_unicode(self.name)
 
 class Country(Place):
     code = models.CharField(max_length=2, db_index=True)
@@ -78,7 +92,7 @@ class Country(Place):
 
     @property
     def parent(self):
-        return None
+        return Continente.objects.get(code=self.continent)
 
     def __unicode__(self):
         return force_unicode(self.name)

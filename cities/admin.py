@@ -4,6 +4,8 @@ from models import *
 class CitiesAdmin(admin.ModelAdmin):
     raw_id_fields = ['alt_names']
 
+admin.site.register(Continente)
+
 class CountryAdmin(CitiesAdmin):
     list_display = ['name', 'code', 'code3', 'tld', 'phone', 'continent', 'area', 'population']
     search_fields = ['name', 'code', 'code3', 'tld', 'phone']

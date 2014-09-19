@@ -426,15 +426,6 @@ class Command(BaseCommand):
         if uptodate and not self.force: return
         data = self.get_data('alt_name')
         
-        self.logger.info("Building geo index")
-        geo_index = {}
-        for type_ in [Country, Region, Subregion, City, District]:
-            for obj in type_.objects.all():
-                geo_index[obj.id] = {
-                    'type': type_,
-                    'object': obj,
-                }
-        
         self.logger.info("Importing alternate name data")
         for item in data:
             if not self.call_hook('alt_name_pre', item): continue
@@ -448,8 +439,10 @@ class Command(BaseCommand):
             
             # Check if known geo id
             geo_id = int(item['geonameid'])
-            try: geo_info = geo_index[geo_id]
-            except: continue
+            try: geo_info = Place.objects.get(id=geo_id)
+            except Exception as e:
+                print e
+                continue
             
             alt = AlternativeName()
             alt.id = int(item['nameid'])
@@ -460,7 +453,7 @@ class Command(BaseCommand):
 
             if not self.call_hook('alt_name_post', alt, item): continue
             alt.save()
-            geo_info['object'].alt_names.add(alt)
+            geo_info.alt_names.add(alt)
 
             self.logger.debug("Added alt name: {0}, {1}".format(locale, alt))
             # free some memory
