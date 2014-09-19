@@ -55,11 +55,17 @@ class Place(models.Model):
         return ", ".join([place.name for place in h])
 
 '''
-coloquei continente em portugues, pois quando estava colocando apenas
-continent estava dando conflito com o atributo continent de Country
+Coloquei continente em portugues, pois quando estava colocando apenas
+continent estava dando conflito com o atributo continent de Country.
+Continente nao pode herdar de place, pois nao tem geonameId reservado.
 '''
-class Continente(Place):
+class Continente(models.Model):
     code = models.CharField(max_length=2)
+    name = models.CharField(max_length=200, db_index=True, verbose_name="ascii name")
+    slug = models.CharField(max_length=200)
+    alt_names = models.ManyToManyField('AlternativeName')
+
+    objects = models.GeoManager()
 
     class Meta:
         ordering = ['name']
@@ -71,6 +77,18 @@ class Continente(Place):
 
     def __unicode__(self):
         return force_unicode(self.name)
+
+    @property
+    def hierarchy(self):
+        """Get hierarchy, root first"""
+        list = self.parent.hierarchy if self.parent else []
+        list.append(self)
+        return list
+
+    def get_absolute_url(self):
+        h = self.hierarchy
+        h.reverse()
+        return "/".join([place.slug for place in h])
 
 class Country(Place):
     code = models.CharField(max_length=2, db_index=True)
