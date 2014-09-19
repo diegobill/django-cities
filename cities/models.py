@@ -63,7 +63,6 @@ class Continente(models.Model):
     code = models.CharField(max_length=2)
     name = models.CharField(max_length=200, db_index=True, verbose_name="ascii name")
     slug = models.CharField(max_length=200)
-    alt_names = models.ManyToManyField('AlternativeName')
 
     objects = models.GeoManager()
 
