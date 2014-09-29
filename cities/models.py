@@ -28,6 +28,10 @@ class Place(models.Model):
     exemplo: aparecer na busca de autocomplete, enviar newsletter com esse destino
     '''
     active = BooleanField(default=True, verbose_name=_('active'))
+    #indica se aquele place eh oriundo da base do geonames
+    #a dica eh fazer a carga inicial da base do geonames ai apartir dai
+    #todo novo place tem geonames igual a False
+    geonames = BooleanField(default=False, verbose_name=_('geonames'))
 
     objects = models.GeoManager()
 
