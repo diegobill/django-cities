@@ -2,6 +2,8 @@ from django.utils.encoding import force_unicode
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from conf import settings
+from django.db.models import BooleanField
+from django.utils.translation import ugettext_lazy as _
 
 __all__ = [
         'Point', 'Country', 'Region', 'Subregion',
@@ -18,6 +20,14 @@ class Place(models.Model):
     name = models.CharField(max_length=200, db_index=True, verbose_name="ascii name")
     slug = models.CharField(max_length=200)
     alt_names = models.ManyToManyField('AlternativeName')
+
+    '''nao aparece mais para a interface do usuario'''
+    deleted = BooleanField(default=False, verbose_name=_('deleted'))
+    '''
+    aparece na interface dos usuarios, mas nao participa das operacoes do sistema 
+    exemplo: aparecer na busca de autocomplete, enviar newsletter com esse destino
+    '''
+    active = BooleanField(default=True, verbose_name=_('active'))
 
     objects = models.GeoManager()
 
