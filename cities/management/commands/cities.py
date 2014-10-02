@@ -365,11 +365,6 @@ class Command(BaseCommand):
         self.build_region_index()
         self.build_hierarchy()
             
-        self.logger.info("Building city index")
-        city_index = {}
-        for obj in City.objects.all():
-            city_index[obj.id] = obj
-            
         self.logger.info("Importing district data")
         for item in data:
             if not self.call_hook('district_pre', item): continue
@@ -387,7 +382,7 @@ class Command(BaseCommand):
             # Find city
             city = None
             try: 
-                city = city_index[self.hierarchy[district.id]]
+                city = City.objects.get(id=self.hierarchy[district.id])
             except:
                 self.logger.warning("District: {0}: Cannot find city in hierarchy, using nearest".format(district.name))
                 city_pop_min = 100000

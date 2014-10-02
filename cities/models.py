@@ -4,6 +4,7 @@ from django.contrib.gis.geos import Point
 from conf import settings
 from django.db.models import BooleanField
 from django.utils.translation import ugettext_lazy as _
+from django.utils import translation
 
 __all__ = [
         'Point', 'Country', 'Region', 'Subregion',
@@ -63,45 +64,41 @@ class Place(models.Model):
         h.reverse()
         return "/".join([place.slug for place in h])
 
+    def translated_name(self):
+        language = translation.get_language()
+        alts = []
+        for alternative in self.alt_names.all():
+            #formato de translation.get_language() e alternative.language estao distintos
+            if alternative.language[:2] == language[:2]:
+                alts.append(alternative)
+        if len(alts)>0:
+            return alts[0] #pegando qualquer traducao
+        else:
+            return self
+
     def __unicode__(self):
         h = self.hierarchy
         h.reverse()
-        return ", ".join([place.name for place in h])
+        alt_h=[]
+        for p in h:
+            alt_h.append(p.translated_name())
+        return ", ".join([p.name for p in alt_h])
 
 '''
 Coloquei continente em portugues, pois quando estava colocando apenas
 continent estava dando conflito com o atributo continent de Country.
-Continente nao pode herdar de place, pois nao tem geonameId reservado.
+Continente nao pertence ao geonames.
 '''
-class Continente(models.Model):
-    code = models.CharField(max_length=2)
-    name = models.CharField(max_length=200, db_index=True, verbose_name="ascii name")
-    slug = models.CharField(max_length=200)
-
-    objects = models.GeoManager()
+class Continente(Place):
+    code = models.CharField(max_length=2, db_index=True)
 
     class Meta:
-        ordering = ['name']
-        verbose_name_plural = "continentes"
+        verbose_name = _('continente')
+        verbose_name_plural = _('continentes')
 
     @property
     def parent(self):
         return None
-
-    def __unicode__(self):
-        return force_unicode(self.name)
-
-    @property
-    def hierarchy(self):
-        """Get hierarchy, root first"""
-        list = self.parent.hierarchy if self.parent else []
-        list.append(self)
-        return list
-
-    def get_absolute_url(self):
-        h = self.hierarchy
-        h.reverse()
-        return "/".join([place.slug for place in h])
 
 class Country(Place):
     code = models.CharField(max_length=2, db_index=True)
@@ -124,9 +121,6 @@ class Country(Place):
     @property
     def parent(self):
         return Continente.objects.get(code=self.continent)
-
-    def __unicode__(self):
-        return force_unicode(self.name)
 
 class Region(Place):
     name_std = models.CharField(max_length=200, db_index=True, verbose_name="standard name")
@@ -186,6 +180,18 @@ class AlternativeName(models.Model):
     is_preferred = models.BooleanField(default=False)
     is_short = models.BooleanField(default=False)
     is_colloquial = models.BooleanField(default=False)
+
+    '''nao aparece mais para a interface do usuario'''
+    deleted = BooleanField(default=False, verbose_name=_('deleted'))
+    '''
+    aparece na interface dos usuarios, mas nao participa das operacoes do sistema 
+    exemplo: aparecer na busca de autocomplete, enviar newsletter com esse destino
+    '''
+    active = BooleanField(default=True, verbose_name=_('active'))
+    #indica se aquele dado eh oriundo da base do geonames
+    #a dica eh fazer a carga inicial da base do geonames ai apartir dai
+    #todo novo dado tem geonames igual a False
+    geonames = BooleanField(default=False, verbose_name=_('geonames'))
 
     def __unicode__(self):
         return "%s (%s)" % (force_unicode(self.name), force_unicode(self.language))
