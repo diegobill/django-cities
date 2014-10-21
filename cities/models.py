@@ -19,7 +19,7 @@ def get_or_none(classmodel, **kwargs):
 
 class Place(models.Model):
     name = models.CharField(max_length=200, db_index=True, verbose_name="ascii name")
-    slug = models.CharField(max_length=200)
+    slug = models.CharField(max_length=200, unique=True)
     alt_names = models.ManyToManyField('AlternativeName')
 
     '''nao aparece mais para a interface do usuario'''
