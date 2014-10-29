@@ -157,6 +157,8 @@ class City(Place):
     kind = models.CharField(max_length=10) # http://www.geonames.org/export/codes.html
     timezone = models.CharField(max_length=40) 
 
+    objects = models.GeoManager()
+
     class Meta:
         verbose_name_plural = "cities"
 
