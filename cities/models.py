@@ -20,7 +20,7 @@ def get_or_none(classmodel, **kwargs):
 class Place(models.Model):
     name = models.CharField(max_length=200, db_index=True, verbose_name="ascii name")
     slug = models.CharField(max_length=200)
-    alt_names = models.ManyToManyField('AlternativeName')
+    alt_names = models.ManyToManyField('AlternativeName', blank=True)
 
     '''nao aparece mais para a interface do usuario'''
     deleted = BooleanField(default=False, verbose_name=_('deleted'))
@@ -153,7 +153,7 @@ class City(Place):
     region = models.ForeignKey(Region, null=True, blank=True)
     subregion = models.ForeignKey(Subregion, null=True, blank=True)
     country = models.ForeignKey(Country)
-    elevation = models.IntegerField(null=True)
+    elevation = models.IntegerField(null=True, blank=True)
     kind = models.CharField(max_length=10) # http://www.geonames.org/export/codes.html
     timezone = models.CharField(max_length=40) 
 
