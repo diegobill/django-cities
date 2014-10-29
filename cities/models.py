@@ -196,7 +196,8 @@ class AlternativeName(models.Model):
     geonames = BooleanField(default=False, verbose_name=_('geonames'))
 
     def __unicode__(self):
-        return "%s (%s)" % (force_unicode(self.name), force_unicode(self.language))
+        place = Place.objects.filter(alt_names__id=self.id)
+        return place[0].__unicode__()
 
 class PostalCode(Place):
     code = models.CharField(max_length=20)
