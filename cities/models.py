@@ -66,15 +66,13 @@ class Place(models.Model):
 
     def translated_name(self):
         language = translation.get_language()
-        alts = []
-        for alternative in self.alt_names.all():
-            #formato de translation.get_language() e alternative.language estao distintos
-            if alternative.language[:2] == language[:2]:
-                alts.append(alternative)
-        if len(alts)>0:
-            return alts[0] #pegando qualquer traducao
-        else:
-            return self
+        alts = self.alt_names.filter(
+            language__startswith=language[:2],
+            active=True, 
+            deleted=False
+        ).order_by('-is_preferred')
+        #pega a traducao dando prioridade as is_preferred
+        return alts[0] if len(alts)>0 else self
 
     def __unicode__(self):
         h = self.hierarchy
