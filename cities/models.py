@@ -5,6 +5,7 @@ from conf import settings
 from django.db.models import BooleanField
 from django.utils.translation import ugettext_lazy as _
 from django.utils import translation
+from django.db import connections
 
 __all__ = [
         'Point', 'Country', 'Region', 'Subregion',
@@ -81,6 +82,16 @@ class Place(models.Model):
         for p in h:
             alt_h.append(p.translated_name())
         return ", ".join([p.name for p in alt_h])
+
+    def save(self, *args, **kwargs):
+        #dado alterado passa a nao pertencer mais ao geonames
+        self.geonames = False
+
+        super(Place, self).save(*args, **kwargs)
+
+        #tabela cache para autocomplete
+        cursor = connections['default'].cursor()
+        cursor.execute("DROP TABLE IF EXISTS cities_table_autocomplete;CREATE TABLE cities_table_autocomplete SELECT * from cities_autocomplete;")
 
 '''
 Coloquei continente em portugues, pois quando estava colocando apenas
@@ -196,6 +207,16 @@ class AlternativeName(models.Model):
     def __unicode__(self):
         place = Place.objects.filter(alt_names__id=self.id)
         return place[0].__unicode__()
+
+    def save(self, *args, **kwargs):
+        #dado alterado passa a nao pertencer mais ao geonames
+        self.geonames = False
+
+        super(AlternativeName, self).save(*args, **kwargs)
+
+        #tabela cache para autocomplete
+        cursor = connections['default'].cursor()
+        cursor.execute("DROP TABLE IF EXISTS cities_table_autocomplete;CREATE TABLE cities_table_autocomplete SELECT * from cities_autocomplete;")
 
 class PostalCode(Place):
     code = models.CharField(max_length=20)
