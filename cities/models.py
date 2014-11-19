@@ -6,6 +6,7 @@ from django.db.models import BooleanField
 from django.utils.translation import ugettext_lazy as _
 from django.utils import translation
 from django.db import connections
+from django.db import transaction, reset_queries
 
 __all__ = [
         'Point', 'Country', 'Region', 'Subregion',
@@ -65,10 +66,9 @@ class Place(models.Model):
         h.reverse()
         return "/".join([place.slug for place in h])
 
-    def translated_name(self):
-        language = translation.get_language()
+    def translated_name(self, language):
         alts = self.alt_names.filter(
-            language__startswith=language[:2],
+            language__startswith=language[:2], #equiparando idiomas, ISO 639-1 soh possui duas letras
             active=True, 
             deleted=False
         ).order_by('-is_preferred')
@@ -80,7 +80,8 @@ class Place(models.Model):
         h.reverse()
         alt_h=[]
         for p in h:
-            alt_h.append(p.translated_name())
+            language = translation.get_language()
+            alt_h.append(p.translated_name(language))
         return ", ".join([p.name for p in alt_h])
 
     def save(self, *args, **kwargs):
@@ -90,8 +91,35 @@ class Place(models.Model):
         super(Place, self).save(*args, **kwargs)
 
         #tabela cache para autocomplete
+
+        #pegando possiveis idiomas
+        languages=[]
+        for l in AlternativeName.objects.raw("SELECT id, language FROM cities_alternativename GROUP BY language"):
+            languages.append(l.language.encode('utf-8'))
+
         cursor = connections['default'].cursor()
-        cursor.execute("DROP TABLE IF EXISTS cities_table_autocomplete;CREATE TABLE cities_table_autocomplete SELECT * from cities_autocomplete;")
+        cursor.execute("DELETE FROM cities_table_autocomplete WHERE 1;")
+        packet_size = 1000;
+        limit = packet_size
+        offset = 0
+        for language in languages:    
+            places = Place.objects.all()[offset:limit]
+            while len(places)>0:
+                for place in places:
+                    sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,\"%s\",\"%s\",%s,%s)" % (
+                        place.id,
+                        place.translated_name(language),
+                        language,
+                        place.active,
+                        place.deleted
+                    )
+                    cursor.execute(sql)
+                offset+=packet_size
+                limit+=packet_size
+                # free some memory
+                # https://docs.djangoproject.com/en/dev/faq/models/
+                reset_queries()
+                places = Place.objects.all()[offset:limit]
 
 '''
 Coloquei continente em portugues, pois quando estava colocando apenas
@@ -215,8 +243,35 @@ class AlternativeName(models.Model):
         super(AlternativeName, self).save(*args, **kwargs)
 
         #tabela cache para autocomplete
+
+        #pegando possiveis idiomas
+        languages=[]
+        for l in AlternativeName.objects.raw("SELECT id, language FROM cities_alternativename GROUP BY language"):
+            languages.append(l.language.encode('utf-8'))
+
         cursor = connections['default'].cursor()
-        cursor.execute("DROP TABLE IF EXISTS cities_table_autocomplete;CREATE TABLE cities_table_autocomplete SELECT * from cities_autocomplete;")
+        cursor.execute("DELETE FROM cities_table_autocomplete WHERE 1;")
+        packet_size = 1000;
+        limit = packet_size
+        offset = 0
+        for language in languages:    
+            places = Place.objects.all()[offset:limit]
+            while len(places)>0:
+                for place in places:
+                    sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,\"%s\",\"%s\",%s,%s)" % (
+                        place.id,
+                        place.translated_name(language),
+                        language,
+                        place.active,
+                        place.deleted
+                    )
+                    cursor.execute(sql)
+                offset+=packet_size
+                limit+=packet_size
+                # free some memory
+                # https://docs.djangoproject.com/en/dev/faq/models/
+                reset_queries()
+                places = Place.objects.all()[offset:limit]
 
 class PostalCode(Place):
     code = models.CharField(max_length=20)
