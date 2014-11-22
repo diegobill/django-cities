@@ -102,24 +102,24 @@ class Place(models.Model):
         packet_size = 1000;
         limit = packet_size
         offset = 0
-        for language in languages:    
-            places = Place.objects.all()[offset:limit]
-            while len(places)>0:
-                for place in places:
-                    sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,\"%s\",\"%s\",%s,%s)" % (
+        places = Place.objects.all()[offset:limit]
+        while len(places)>0:
+            for place in places:
+                for language in languages: 
+                    sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,'%s','%s',%s,%s)" % (
                         place.id,
-                        place.translated_name(language),
+                        place.translated_name(language).name.replace("'",'"'),
                         language,
                         place.active,
                         place.deleted
                     )
                     cursor.execute(sql)
-                offset+=packet_size
-                limit+=packet_size
-                # free some memory
-                # https://docs.djangoproject.com/en/dev/faq/models/
-                reset_queries()
-                places = Place.objects.all()[offset:limit]
+            offset+=packet_size
+            limit+=packet_size
+            # free some memory
+            # https://docs.djangoproject.com/en/dev/faq/models/
+            reset_queries()
+            places = Place.objects.all()[offset:limit]
 
 '''
 Coloquei continente em portugues, pois quando estava colocando apenas
@@ -254,24 +254,24 @@ class AlternativeName(models.Model):
         packet_size = 1000;
         limit = packet_size
         offset = 0
-        for language in languages:    
-            places = Place.objects.all()[offset:limit]
-            while len(places)>0:
-                for place in places:
-                    sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,\"%s\",\"%s\",%s,%s)" % (
+        places = Place.objects.all()[offset:limit]
+        while len(places)>0:
+            for place in places:
+                for language in languages: 
+                    sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,'%s','%s',%s,%s)" % (
                         place.id,
-                        place.translated_name(language),
+                        place.translated_name(language).name.replace("'",'"'),
                         language,
                         place.active,
                         place.deleted
                     )
                     cursor.execute(sql)
-                offset+=packet_size
-                limit+=packet_size
-                # free some memory
-                # https://docs.djangoproject.com/en/dev/faq/models/
-                reset_queries()
-                places = Place.objects.all()[offset:limit]
+            offset+=packet_size
+            limit+=packet_size
+            # free some memory
+            # https://docs.djangoproject.com/en/dev/faq/models/
+            reset_queries()
+            places = Place.objects.all()[offset:limit]
 
 class PostalCode(Place):
     code = models.CharField(max_length=20)
