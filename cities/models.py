@@ -84,6 +84,14 @@ class Place(models.Model):
             alt_h.append(p.translated_name(language))
         return ", ".join([p.name for p in alt_h])
 
+    def __unicode__(self,language):
+        h = self.hierarchy
+        h.reverse()
+        alt_h=[]
+        for p in h:
+            alt_h.append(p.translated_name(language))
+        return ", ".join([p.name for p in alt_h])
+
     def save(self, *args, **kwargs):
         #dado alterado passa a nao pertencer mais ao geonames
         self.geonames = False
@@ -108,7 +116,7 @@ class Place(models.Model):
                 for language in languages: 
                     sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,'%s','%s',%s,%s)" % (
                         place.id,
-                        place.translated_name(language).name.replace("'",'"'),
+                        place.__unicode__(language).replace("'",'"'),
                         language,
                         place.active,
                         place.deleted
@@ -260,7 +268,7 @@ class AlternativeName(models.Model):
                 for language in languages: 
                     sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,'%s','%s',%s,%s)" % (
                         place.id,
-                        place.translated_name(language).name.replace("'",'"'),
+                        place.__unicode__(language).replace("'",'"'),
                         language,
                         place.active,
                         place.deleted
