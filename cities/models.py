@@ -66,7 +66,7 @@ class Place(models.Model):
         h.reverse()
         return "/".join([place.slug for place in h])
 
-    def translated_name(self, language):
+    def translated(self, language):
         alts = self.alt_names.filter(
             language__startswith=language[:2], #equiparando idiomas, ISO 639-1 soh possui duas letras
             active=True, 
@@ -81,15 +81,15 @@ class Place(models.Model):
         alt_h=[]
         for p in h:
             language = translation.get_language()
-            alt_h.append(p.translated_name(language))
+            alt_h.append(p.translated(language))
         return ", ".join([p.name for p in alt_h])
 
-    def __unicode__(self,language):
+    def translated_name(self,language):
         h = self.hierarchy
         h.reverse()
         alt_h=[]
         for p in h:
-            alt_h.append(p.translated_name(language))
+            alt_h.append(p.translated(language))
         return ", ".join([p.name for p in alt_h])
 
     def save(self, *args, **kwargs):
@@ -116,7 +116,7 @@ class Place(models.Model):
                 for language in languages: 
                     sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,'%s','%s',%s,%s)" % (
                         place.id,
-                        place.__unicode__(language).replace("'",'"'),
+                        place.translated_name(language).replace("'",'"'),
                         language,
                         place.active,
                         place.deleted
