@@ -98,37 +98,6 @@ class Place(models.Model):
 
         super(Place, self).save(*args, **kwargs)
 
-        #tabela cache para autocomplete
-
-        #pegando possiveis idiomas
-        languages=[]
-        for l in AlternativeName.objects.raw("SELECT id, language FROM cities_alternativename GROUP BY language"):
-            languages.append(l.language.encode('utf-8'))
-
-        cursor = connections['default'].cursor()
-        cursor.execute("DELETE FROM cities_table_autocomplete WHERE 1;")
-        packet_size = 1000;
-        limit = packet_size
-        offset = 0
-        places = Place.objects.all()[offset:limit]
-        while len(places)>0:
-            for place in places:
-                for language in languages: 
-                    sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,'%s','%s',%s,%s)" % (
-                        place.id,
-                        place.translated_name(language).replace("'",'"'),
-                        language,
-                        place.active,
-                        place.deleted
-                    )
-                    cursor.execute(sql)
-            offset+=packet_size
-            limit+=packet_size
-            # free some memory
-            # https://docs.djangoproject.com/en/dev/faq/models/
-            reset_queries()
-            places = Place.objects.all()[offset:limit]
-
 '''
 Coloquei continente em portugues, pois quando estava colocando apenas
 continent estava dando conflito com o atributo continent de Country.
@@ -249,37 +218,6 @@ class AlternativeName(models.Model):
         self.geonames = False
 
         super(AlternativeName, self).save(*args, **kwargs)
-
-        #tabela cache para autocomplete
-
-        #pegando possiveis idiomas
-        languages=[]
-        for l in AlternativeName.objects.raw("SELECT id, language FROM cities_alternativename GROUP BY language"):
-            languages.append(l.language.encode('utf-8'))
-
-        cursor = connections['default'].cursor()
-        cursor.execute("DELETE FROM cities_table_autocomplete WHERE 1;")
-        packet_size = 1000;
-        limit = packet_size
-        offset = 0
-        places = Place.objects.all()[offset:limit]
-        while len(places)>0:
-            for place in places:
-                for language in languages: 
-                    sql = "INSERT INTO cities_table_autocomplete (id, name, language, active, deleted) VALUES (%s,'%s','%s',%s,%s)" % (
-                        place.id,
-                        place.__unicode__(language).replace("'",'"'),
-                        language,
-                        place.active,
-                        place.deleted
-                    )
-                    cursor.execute(sql)
-            offset+=packet_size
-            limit+=packet_size
-            # free some memory
-            # https://docs.djangoproject.com/en/dev/faq/models/
-            reset_queries()
-            places = Place.objects.all()[offset:limit]
 
 class PostalCode(Place):
     code = models.CharField(max_length=20)
