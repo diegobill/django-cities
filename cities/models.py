@@ -92,11 +92,49 @@ class Place(models.Model):
             alt_h.append(p.translated(language))
         return ", ".join([p.name for p in alt_h])
 
+    #TODO: otimizar consumo de memoria
+    def subordinates(self):
+        sub = self.subclass
+        if type(sub)==City:
+            return []
+        elif type(sub)==Region:
+            cities = City.objects.filter(region__id=self.id)
+            return list(cities)
+        elif type(sub)==Country:
+            cities = City.objects.filter(country__id=self.id)
+            regions = Region.objects.filter(country__id=self.id)
+            return list(cities)+list(regions)
+        elif type(sub)==Continente:
+            cities_regions=[]
+            countries=Country.objects.filter(continent=self.code)
+            for c in countries:
+                cities_regions += c.subordinates()
+            return list(countries) + cities_regions
+
+    def update_autocomplete(self):
+        #atualizando place e places subordinados, pois os subordinados possuem o name do superior
+        places=[self]+self.subordinates()
+        for language in ['pt','en']:
+            if 'cities_table_autocomplete_'+language[:2] in connections['default'].introspection.table_names():
+                for p in places:
+                    sql = "UPDATE cities_table_autocomplete_%s SET name='%s', slug='%s', active=%s, deleted=%s WHERE id=%s;" % (
+                        language,
+                        p.translated_name(language).replace("'",'"'),
+                        p.get_absolute_url(),
+                        p.active,
+                        p.deleted,
+                        p.id
+                    )
+                    cursor = connections['default'].cursor()
+                    cursor.execute(sql)
+
     def save(self, *args, **kwargs):
         #dado alterado passa a nao pertencer mais ao geonames
         self.geonames = False
 
         super(Place, self).save(*args, **kwargs)
+
+        self.update_autocomplete()
 
 '''
 Coloquei continente em portugues, pois quando estava colocando apenas
@@ -195,62 +233,4 @@ class AlternativeName(models.Model):
     language = models.CharField(max_length=100)
     is_preferred = models.BooleanField(default=False)
     is_short = models.BooleanField(default=False)
-    is_colloquial = models.BooleanField(default=False)
-
-    '''nao aparece mais para a interface do usuario'''
-    deleted = BooleanField(default=False, verbose_name=_('deleted'))
-    '''
-    aparece na interface dos usuarios, mas nao participa das operacoes do sistema 
-    exemplo: aparecer na busca de autocomplete, enviar newsletter com esse destino
-    '''
-    active = BooleanField(default=True, verbose_name=_('active'))
-    #indica se aquele dado eh oriundo da base do geonames
-    #a dica eh fazer a carga inicial da base do geonames ai apartir dai
-    #todo novo dado tem geonames igual a False
-    geonames = BooleanField(default=False, verbose_name=_('geonames'))
-
-    def __unicode__(self):
-        place = Place.objects.filter(alt_names__id=self.id)
-        return place[0].__unicode__()
-
-    def save(self, *args, **kwargs):
-        #dado alterado passa a nao pertencer mais ao geonames
-        self.geonames = False
-
-        super(AlternativeName, self).save(*args, **kwargs)
-
-class PostalCode(Place):
-    code = models.CharField(max_length=20)
-    location = models.PointField()
-
-    country = models.ForeignKey(Country, related_name = 'postal_codes')
-
-    # Region names for each admin level, region may not exist in DB
-    region_name = models.CharField(max_length=100, db_index=True)
-    subregion_name = models.CharField(max_length=100, db_index=True)
-    district_name = models.CharField(max_length=100, db_index=True)
-
-    objects = models.GeoManager()
-
-    @property
-    def parent(self):
-        return self.country
-
-    @property
-    def name_full(self):
-        """Get full name including hierarchy"""
-        return u', '.join(reversed(self.names)) 
-
-    @property
-    def names(self):
-        """Get a hierarchy of non-null names, root first"""
-        return [e for e in [
-            force_unicode(self.country),
-            force_unicode(self.region_name),
-            force_unicode(self.subregion_name),
-            force_unicode(self.district_name),
-            force_unicode(self.name),
-        ] if e]
-
-    def __unicode__(self):
-        return force_unicode(self.code)
+    is_colloquial = model
