@@ -38,6 +38,10 @@ class Place(models.Model):
 
     objects = models.GeoManager()
 
+    #utilizado para rankear os places, dessa forma em uma 
+    #consulta pode-se ordenar os places segundo esse atributo
+    ranking = models.IntegerField()
+
     #class Meta:
     #    abstract = True
 
@@ -112,21 +116,37 @@ class Place(models.Model):
             return list(countries) + cities_regions
 
     def update_autocomplete(self):
-        #atualizando place e places subordinados, pois os subordinados possuem o name do superior
-        places=[self]+self.subordinates()
+        orig = Place.objects.get(pk=self.id)
+
+        #atualizando place
         for language in ['pt','en']:
-            if 'cities_table_autocomplete_'+language[:2] in connections['default'].introspection.table_names():
-                for p in places:
-                    sql = "UPDATE cities_table_autocomplete_%s SET name='%s', slug='%s', active=%s, deleted=%s WHERE id=%s;" % (
+                if 'cities_table_autocomplete_'+language[:2] in connections['default'].introspection.table_names():
+                    sql = "UPDATE cities_table_autocomplete_%s SET name='%s', slug='%s', active=%s, deleted=%s, ranking=%s WHERE id=%s;" % (
                         language,
-                        p.translated_name(language).replace("'",'"'),
-                        p.get_absolute_url(),
-                        p.active,
-                        p.deleted,
-                        p.id
+                        self.translated_name(language).replace("'",'"'),
+                        self.get_absolute_url(),
+                        self.active,
+                        self.deleted,
+                        self.ranking,
+                        self.id
                     )
                     cursor = connections['default'].cursor()
                     cursor.execute(sql)
+
+        #atualizando places subordinados, pois os subordinados possuem o name/slug do superior
+        if orig.name!=self.name or orig.slug!=self.slug:
+            places=self.subordinates()
+            for language in ['pt','en']:
+                if 'cities_table_autocomplete_'+language[:2] in connections['default'].introspection.table_names():
+                    for p in places:
+                        sql = "UPDATE cities_table_autocomplete_%s SET name='%s', slug='%s' WHERE id=%s;" % (
+                            language,
+                            p.translated_name(language).replace("'",'"'),
+                            p.get_absolute_url(),
+                            p.id
+                        )
+                        cursor = connections['default'].cursor()
+                        cursor.execute(sql)
 
     def save(self, *args, **kwargs):
         #dado alterado passa a nao pertencer mais ao geonames
@@ -155,16 +175,16 @@ class Continente(Place):
 class Country(Place):
     code = models.CharField(max_length=2, db_index=True)
     code3 = models.CharField(max_length=3, db_index=True)
-    population = models.IntegerField()
-    area = models.IntegerField(null=True)
-    currency = models.CharField(max_length=3, null=True)
-    currency_name = models.CharField(max_length=50, null=True)
-    languages = models.CharField(max_length=250, null=True)
-    phone = models.CharField(max_length=20)
+    population = models.IntegerField(blank=True)
+    area = models.IntegerField(null=True, blank=True)
+    currency = models.CharField(max_length=3, null=True, blank=True)
+    currency_name = models.CharField(max_length=50, null=True, blank=True)
+    languages = models.CharField(max_length=250, null=True, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
     continent = models.CharField(max_length=2)
     tld = models.CharField(max_length=5)
-    capital = models.CharField(max_length=100)
-    neighbours = models.ManyToManyField("self")
+    capital = models.CharField(max_length=100, blank=True)
+    neighbours = models.ManyToManyField("self", blank=True)
 
     class Meta:
         ordering = ['name']
@@ -201,7 +221,7 @@ class Subregion(Place):
 class City(Place):
     name_std = models.CharField(max_length=200, db_index=True, verbose_name="standard name")
     location = models.PointField()
-    population = models.IntegerField()
+    population = models.IntegerField(blank=True)
     region = models.ForeignKey(Region, null=True, blank=True)
     subregion = models.ForeignKey(Subregion, null=True, blank=True)
     country = models.ForeignKey(Country)
@@ -295,4 +315,3 @@ class PostalCode(Place):
 
     def __unicode__(self):
         return force_unicode(self.code)
-
