@@ -33,7 +33,7 @@ admin.site.register(Subregion, SubregionAdmin)
 class CityAdmin(CitiesAdmin):
     ordering = ['name_std']
     list_display = ['name_std', 'subregion', 'region', 'country', 'population']
-    search_fields = ['name', 'name_std']
+    search_fields = ['name_std']
     raw_id_fields = ['alt_names', 'region', 'subregion']
 
 admin.site.register(City, CityAdmin)
