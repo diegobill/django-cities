@@ -233,4 +233,66 @@ class AlternativeName(models.Model):
     language = models.CharField(max_length=100)
     is_preferred = models.BooleanField(default=False)
     is_short = models.BooleanField(default=False)
-    is_colloquial = model
+    is_colloquial = models.BooleanField(default=False)
+
+    '''nao aparece mais para a interface do usuario'''
+    deleted = BooleanField(default=False, verbose_name=_('deleted'))
+    '''
+    aparece na interface dos usuarios, mas nao participa das operacoes do sistema 
+    exemplo: aparecer na busca de autocomplete, enviar newsletter com esse destino
+    '''
+    active = BooleanField(default=True, verbose_name=_('active'))
+    #indica se aquele dado eh oriundo da base do geonames
+    #a dica eh fazer a carga inicial da base do geonames ai apartir dai
+    #todo novo dado tem geonames igual a False
+    geonames = BooleanField(default=False, verbose_name=_('geonames'))
+
+    def __unicode__(self):
+        place = Place.objects.filter(alt_names__id=self.id)
+        return place[0].__unicode__()
+
+    def save(self, *args, **kwargs):
+        #dado alterado passa a nao pertencer mais ao geonames
+        self.geonames = False
+
+        super(AlternativeName, self).save(*args, **kwargs)
+
+        place = Place.objects.get(alt_names__id=self.id)
+        place.update_autocomplete()
+
+class PostalCode(Place):
+    code = models.CharField(max_length=20)
+    location = models.PointField()
+
+    country = models.ForeignKey(Country, related_name = 'postal_codes')
+
+    # Region names for each admin level, region may not exist in DB
+    region_name = models.CharField(max_length=100, db_index=True)
+    subregion_name = models.CharField(max_length=100, db_index=True)
+    district_name = models.CharField(max_length=100, db_index=True)
+
+    objects = models.GeoManager()
+
+    @property
+    def parent(self):
+        return self.country
+
+    @property
+    def name_full(self):
+        """Get full name including hierarchy"""
+        return u', '.join(reversed(self.names)) 
+
+    @property
+    def names(self):
+        """Get a hierarchy of non-null names, root first"""
+        return [e for e in [
+            force_unicode(self.country),
+            force_unicode(self.region_name),
+            force_unicode(self.subregion_name),
+            force_unicode(self.district_name),
+            force_unicode(self.name),
+        ] if e]
+
+    def __unicode__(self):
+        return force_unicode(self.code)
+
