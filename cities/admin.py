@@ -10,14 +10,14 @@ class ContinenteAdmin(CitiesAdmin):
 admin.site.register(Continente, ContinenteAdmin)
 
 class CountryAdmin(CitiesAdmin):
-    list_display = ['name', 'code', 'code3', 'tld', 'phone', 'continent', 'area', 'population']
+    list_display = ['__str__', 'continent']
     search_fields = ['name', 'code', 'code3', 'tld', 'phone']
 
 admin.site.register(Country, CountryAdmin)
 
 class RegionAdmin(CitiesAdmin):
     ordering = ['name_std']
-    list_display = ['name_std', 'code', 'country']
+    list_display = ['__str__', 'country']
     search_fields = ['name', 'name_std', 'code']
 
 admin.site.register(Region, RegionAdmin)
@@ -31,10 +31,11 @@ class SubregionAdmin(CitiesAdmin):
 admin.site.register(Subregion, SubregionAdmin)
 
 class CityAdmin(CitiesAdmin):
-    ordering = ['name_std']
-    list_display = ['name_std', 'region', 'country']
-    search_fields = ['name_std']
+    ordering = ['name']
+    list_display = ['__str__']
+    search_fields = ['name']
     raw_id_fields = ['alt_names', 'region', 'subregion']
+    exclude = ['subregion']
 
 admin.site.register(City, CityAdmin)
 
