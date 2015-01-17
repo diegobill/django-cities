@@ -115,7 +115,7 @@ class Place(models.Model):
                 cities_regions += c.subordinates()
             return list(countries) + cities_regions
 
-    def update_autocomplete(self):
+    def update_autocomplete(self, update_subordinates=False):
         orig = Place.objects.get(pk=self.id)
 
         #atualizando place
@@ -134,7 +134,7 @@ class Place(models.Model):
                     cursor.execute(sql)
 
         #atualizando places subordinados, pois os subordinados possuem o name/slug do superior
-        if orig.name!=self.name or orig.slug!=self.slug:
+        if orig.name!=self.name or orig.slug!=self.slug or update_subordinates:
             places=self.subordinates()
             for language in ['pt','en']:
                 if 'cities_table_autocomplete_'+language[:2] in connections['default'].introspection.table_names():
@@ -275,10 +275,12 @@ class AlternativeName(models.Model):
         #dado alterado passa a nao pertencer mais ao geonames
         self.geonames = False
 
+        orig = AlternativeName.objects.get(pk=self.id)
+
         super(AlternativeName, self).save(*args, **kwargs)
 
         place = Place.objects.get(alt_names__id=self.id)
-        place.update_autocomplete()
+        place.update_autocomplete(True if orig.name!=self.name else False)
 
 class PostalCode(Place):
     code = models.CharField(max_length=20)
