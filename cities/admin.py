@@ -4,6 +4,11 @@ from models import *
 class CitiesAdmin(admin.ModelAdmin):
     raw_id_fields = ['alt_names']
 
+    list_display = ['name_std']
+    search_fields = ['name_std']
+
+admin.site.register(City, CitiesAdmin)
+
 class ContinenteAdmin(CitiesAdmin):
     ordering = ['name']
 
