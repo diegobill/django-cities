@@ -4,11 +4,6 @@ from models import *
 class CitiesAdmin(admin.ModelAdmin):
     raw_id_fields = ['alt_names']
 
-    list_display = ['name_std']
-    search_fields = ['name_std']
-
-admin.site.register(City, CitiesAdmin)
-
 class ContinenteAdmin(CitiesAdmin):
     ordering = ['name']
 
@@ -36,11 +31,11 @@ class SubregionAdmin(CitiesAdmin):
 admin.site.register(Subregion, SubregionAdmin)
 
 class CityAdmin(CitiesAdmin):
-    ordering = ['name']
-    list_display = ['__str__']
-    search_fields = ['name']
-    raw_id_fields = ['alt_names', 'region', 'subregion']
-    exclude = ['subregion']
+    ordering = ['name_std']
+    list_display = ['name_std']
+    search_fields = ['name_std']
+    raw_id_fields = ['alt_names']#, 'region', 'subregion']
+    #exclude = ['subregion']
 
 admin.site.register(City, CityAdmin)
 
