@@ -70,6 +70,10 @@ class Place(models.Model):
         h.reverse()
         return "/".join([place.slug for place in h])
 
+    def get_absolute_slug(self):
+        h = self.hierarchy
+        return "-".join([place.slug for place in h])
+
     def translated(self, language):
         alts = self.alt_names.filter(
             language__startswith=language[:2], #equiparando idiomas, ISO 639-1 soh possui duas letras
