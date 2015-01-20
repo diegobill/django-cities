@@ -74,7 +74,7 @@ class Place(models.Model):
         h = self.hierarchy
         return "-".join([place.slug for place in h])
 
-    def translated(self, language):
+    def translated(self, language=translation.get_language()):
         alts = self.alt_names.filter(
             language__startswith=language[:2], #equiparando idiomas, ISO 639-1 soh possui duas letras
             active=True, 
@@ -92,7 +92,7 @@ class Place(models.Model):
             alt_h.append(p.translated(language))
         return ", ".join([p.name for p in alt_h])
 
-    def translated_name(self,language):
+    def translated_name(self,language=translation.get_language()):
         h = self.hierarchy
         h.reverse()
         alt_h=[]

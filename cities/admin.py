@@ -4,6 +4,22 @@ from models import *
 class CitiesAdmin(admin.ModelAdmin):
     raw_id_fields = ['alt_names']
 
+    def queryset(self, request):
+        """
+        Filter the objects displayed in the change_list.
+        """
+        qs = super(CitiesAdmin, self).queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(deleted=False)
+
+class PlaceAdmin(CitiesAdmin):
+    ordering = ['name']
+    search_fields = ['name']
+    list_display = ['name', 'ranking','slug', 'active', 'geonames']
+
+admin.site.register(Place, PlaceAdmin)
+
 class ContinenteAdmin(CitiesAdmin):
     ordering = ['name']
 
@@ -30,14 +46,14 @@ class SubregionAdmin(CitiesAdmin):
 
 admin.site.register(Subregion, SubregionAdmin)
 
-class CityAdmin(CitiesAdmin):
-    ordering = ['name_std']
-    list_display = ['name_std']
-    search_fields = ['name_std']
-    raw_id_fields = ['alt_names']#, 'region', 'subregion']
+#class CityAdmin(CitiesAdmin):
+#    ordering = ['name_std']
+#    list_display = ['name_std']
+#    search_fields = ['name_std']
+#    raw_id_fields = ['alt_names']#, 'region', 'subregion']
     #exclude = ['subregion']
 
-admin.site.register(City, CityAdmin)
+#admin.site.register(City, CityAdmin)
 
 class DistrictAdmin(CitiesAdmin):
     raw_id_fields = ['alt_names', 'city']
