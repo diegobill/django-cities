@@ -26,21 +26,21 @@ class ContinenteAdmin(CitiesAdmin):
 admin.site.register(Continente, ContinenteAdmin)
 
 class CountryAdmin(CitiesAdmin):
-    list_display = ['__str__', 'continent']
+    list_display = ['name', 'continent']
     search_fields = ['name', 'code', 'code3', 'tld', 'phone']
 
 admin.site.register(Country, CountryAdmin)
 
 class RegionAdmin(CitiesAdmin):
-    ordering = ['name_std']
-    list_display = ['__str__', 'country']
+    ordering = ['name']
+    list_display = ['name', 'country']
     search_fields = ['name', 'name_std', 'code']
 
 admin.site.register(Region, RegionAdmin)
 
 class SubregionAdmin(CitiesAdmin):
-    ordering = ['name_std']
-    list_display = ['name_std', 'code', 'region']
+    ordering = ['name']
+    list_display = ['name', 'code', 'region']
     search_fields = ['name', 'name_std', 'code']
     raw_id_fields = ['alt_names', 'region']
 
@@ -57,7 +57,7 @@ admin.site.register(Subregion, SubregionAdmin)
 
 class DistrictAdmin(CitiesAdmin):
     raw_id_fields = ['alt_names', 'city']
-    list_display = ['name_std', 'city']
+    list_display = ['name', 'city']
     search_fields = ['name', 'name_std']
 
 admin.site.register(District, DistrictAdmin)
