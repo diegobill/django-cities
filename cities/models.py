@@ -114,7 +114,7 @@ class Place(models.Model):
             return list(cities)+list(regions)
         elif type(sub)==Continente:
             cities_regions=[]
-            countries=Country.objects.filter(continent=self.code)
+            countries=Country.objects.filter(continent=sub.code)
             for c in countries:
                 cities_regions += c.subordinates()
             return list(countries) + cities_regions
