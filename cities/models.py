@@ -100,6 +100,11 @@ class Place(models.Model):
             alt_h.append(p.translated(language))
         return ", ".join([p.name for p in alt_h])
 
+    def original_name(self):
+        h = self.hierarchy
+        h.reverse()
+        return ", ".join([p.name for p in h])
+
     #TODO: otimizar consumo de memoria
     def subordinates(self):
         sub = self.subclass
