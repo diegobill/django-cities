@@ -273,7 +273,10 @@ class AlternativeName(models.Model):
 
     def __unicode__(self):
         place = Place.objects.filter(alt_names__id=self.id)
-        return place[0].__unicode__()
+        if len(place)>0:
+            return place[0].__unicode__()
+        else:
+            return self.name
 
     def save(self, *args, **kwargs):
         #dado alterado passa a nao pertencer mais ao geonames
