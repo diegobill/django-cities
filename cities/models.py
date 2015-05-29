@@ -72,6 +72,7 @@ class Place(models.Model):
 
     def get_absolute_slug(self):
         h = self.hierarchy
+        h.reverse()
         return "-".join([place.slug for place in h])
 
     def translated(self, language=translation.get_language()):
